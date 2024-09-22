@@ -1,0 +1,31 @@
+- name: Install Vector
+  hosts: vector
+  handlers:
+    - name: Restart vector service
+      become: true
+      ansible.builtin.service:
+        name: vector
+        state: restarted
+  tasks:
+    - name: Download Vector
+      ansible.builtin.get_url:
+        url: "https://packages.timber.io/vector/0.21.0/vector-x86_64-unknown-linux-gnu.tar.gz"
+        dest: "/tmp/vector.tar.gz"
+    - name: Extract Vector
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/vector.tar.gz"
+        dest: "/usr/local/bin"
+        remote_src: yes
+    - name: Create /etc/vector directory
+      become: true
+      ansible.builtin.file:
+        path: /etc/vector
+        state: directory
+        mode: '0755'
+    - name: Configure Vector
+      become: true
+      ansible.builtin.template:
+        src: "templates/vector.j2"
+        dest: "/etc/vector/vector.toml"
+      notify: Restart vector service
